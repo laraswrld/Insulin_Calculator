@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Insulin Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0eb;
+    --surface: #ffffff;
+    --surface2: #fdf8f3;
+    --accent: #c0392b;
+    --accent-light: #f9e8e7;
+    --text: #1a1410;
+    --muted: #7a6e65;
+    --border: #e8e0d6;
+    --green: #2d6a4f;
+    --green-light: #e8f5ee;
+    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  header h1 span {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  .icon-red { background: var(--accent-light); }
+  .icon-green { background: var(--green-light); }
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  input[type="number"],
+  input[type="text"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    color: var(--text);
+    background: var(--surface2);
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field:last-child { margin-bottom: 0; }
+
+  .hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+
+  /* Food search */
+  .search-wrap {
+    position: relative;
+  }
+
+  #food-results {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    display: none;
+  }
+
+  .food-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .food-item:last-child { border-bottom: none; }
+  .food-item:hover { background: var(--accent-light); }
+
+  .food-item-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .food-item-carb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .selected-food {
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 8px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .selected-food.show { display: flex; }
+
+  .selected-food-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .selected-food-carb {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .clear-food {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--accent);
+    padding: 0 4px;
+  }
+
+  /* Portion selector */
+  .portion-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .portion-btn {
+    padding: 10px 4px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .portion-btn:hover { border-color: var(--accent); }
+  .portion-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* Row layout for two fields */
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Calculate button */
+  #calc-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 16px rgba(192,57,43,0.35);
+    margin-bottom: 16px;
+  }
+
+  #calc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(192,57,43,0.4);
+  }
+
+  #calc-btn:active { transform: translateY(0); }
+
+  /* Result */
+  #result {
+    display: none;
+    background: var(--green);
+    border-radius: var(--radius);
+    padding: 24px;
+    color: white;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(45,106,79,0.35);
+    margin-bottom: 16px;
+    animation: slideUp 0.35s ease;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  #result.show { display: block; }
+
+  .result-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-bottom: 4px;
+  }
+
+  .result-total {
+    font-family: 'DM Serif Display', serif;
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .result-unit {
+    font-size: 1rem;
+    opacity: 0.8;
+    margin-bottom: 20px;
+  }
+
+  .result-breakdown {
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .breakdown-item .b-label {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .breakdown-item .b-val {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: 'DM Serif Display', serif;
+  }
+
+  .warning {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: #856404;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .warning.show { display: block; }
+
+  /* Settings section */
+  .settings-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .settings-toggle .toggle-arrow {
+    transition: transform 0.2s;
+    font-size: 0.8rem;
+  }
+
+  .settings-toggle.open .toggle-arrow {
+    transform: rotate(180deg);
+  }
+
+  #settings-body {
+    margin-top: 16px;
+    display: none;
+  }
+
+  #settings-body.open { display: block; }
+
+  .settings-saved {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--green-light);
+    color: var(--green);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .settings-saved.show { opacity: 1; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  footer strong { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Insulin <span>Calculator</span></h1>
+  <p>Safe, simple dosing — every time</p>
+</header>
+
+<!-- Settings Card -->
+<div class="card">
+  <div class="card-title settings-toggle" id="settings-toggle">
+    <div class="icon icon-red">⚙️</div>
+    Patient Settings
+    <span style="flex:1"></span>
+    <span class="settings-saved" id="saved-badge">✓ Saved</span>
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div id="settings-body">
+    <div class="row">
+      <div class="field">
+        <label>Insulin-to-Carb Ratio</label>
+        <input type="number" id="icr" min="1" max="100" step="0.5" placeholder="e.g. 15" />
+        <div class="hint">1 unit per __ grams of carbs</div>
+      </div>
+      <div class="field">
+        <label>Correction Factor</label>
+        <input type="number" id="isf" min="1" max="200" step="1" placeholder="e.g. 50" />
+        <div class="hint">1 unit lowers sugar by __ mg/dL</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Target Blood Sugar (mg/dL)</label>
+      <input type="number" id="target" min="60" max="200" step="1" placeholder="e.g. 100" />
+    </div>
+  </div>
+</div>
+
+<!-- Food Card -->
+<div class="card">
+  <div class="card-title">
+    <div class="icon icon-red">🍽️</div>
+    Food & Portion
+  </div>
+
+  <div class="field">
+    <label>Search Food</label>
+    <div class="search-wrap">
+      <input type="text" id="food-search" placeholder="e.g. white rice, banana…" autocomplete="off" />
+      <div id="food-results"></div>
+    </div>
+    <div class="selected-food" id="selected-food-display">
+      <div>
+        <div class="selected-food-name" id="sfood-name"></div>
+        <div class="selected-food-carb" id="sfood-carb"></div>
+      </div>
+      <button class="clear-food" id="clear-food">✕</button>
+    </div>
+  </div>
+
+  <div class="field" id="portion-field" style="display:none">
+    <label>Portion Size</label>
+    <div class="portion-buttons" id="portion-buttons"></div>
+    <div class="hint" id="total-carb-hint" style="margin-top:10px;font-weight:600;color:var(--text)"></div>
+  </div>
+
+  <div class="field" id="manual-carb-field">
+    <label>Or Enter Carbs Manually (grams)</label>
+    <input type="number" id="manual-carbs" min="0" max="500" step="1" placeholder="grams of carbs" />
+  </div>
+</div>
+
+<!-- Blood Sugar Card -->
+<div class="card">
+  <div class="card-title">
+    <div class="icon icon-green">🩸</div>
+    Current Blood Sugar
+  </div>
+  <div class="field">
+    <label>Blood Sugar Right Now (mg/dL)</label>
+    <input type="number" id="current-sugar" min="30" max="600" step="1" placeholder="e.g. 180" />
+  </div>
+</div>
+
+<button id="calc-btn">Calculate Dose →</button>
+
+<div id="result">
+  <div class="result-label">Total Insulin to Inject</div>
+  <div class="result-total" id="res-total">--</div>
+  <div class="result-unit">units</div>
+  <div class="result-breakdown">
+    <div class="breakdown-item">
+      <div class="b-label">Food Dose</div>
+      <div class="b-val" id="res-food">--</div>
+    </div>
+    <div class="breakdown-item">
+      <div class="b-label">Correction Dose</div>
+      <div class="b-val" id="res-correction">--</div>
+    </div>
+  </div>
+</div>
+
+<div class="warning" id="low-warning">
+  ⚠️ Blood sugar is already at or below target. Only food dose may be needed — check with your care team about how to handle this.
+</div>
+
+<footer>
+  Always confirm doses with your healthcare provider.<br>
+  <strong>Not a substitute for medical advice.</strong>
+</footer>
+
+<script>
+// ─── Food Database (per 100g carbs, plus common serving sizes) ───
+const FOODS = [
+  { name: "White Rice (cooked)", carbs100g: 28, servings: [{ label: "½ cup (90g)", carbs: 25 }, { label: "1 cup (180g)", carbs: 51 }, { label: "1½ cups (270g)", carbs: 76 }] },
+  { name: "Brown Rice (cooked)", carbs100g: 23, servings: [{ label: "½ cup (90g)", carbs: 21 }, { label: "1 cup (180g)", carbs: 41 }, { label: "1½ cups (270g)", carbs: 62 }] },
+  { name: "White Bread", carbs100g: 49, servings: [{ label: "1 slice (30g)", carbs: 15 }, { label: "2 slices (60g)", carbs: 29 }, { label: "3 slices (90g)", carbs: 44 }] },
+  { name: "Whole Wheat Bread", carbs100g: 41, servings: [{ label: "1 slice (30g)", carbs: 12 }, { label: "2 slices (60g)", carbs: 25 }, { label: "3 slices (90g)", carbs: 37 }] },
+  { name: "Pasta (cooked)", carbs100g: 25, servings: [{ label: "½ cup (70g)", carbs: 17 }, { label: "1 cup (140g)", carbs: 35 }, { label: "2 cups (280g)", carbs: 70 }] },
+  { name: "Spaghetti (cooked)", carbs100g: 25, servings: [{ label: "½ cup (70g)", carbs: 17 }, { label: "1 cup (140g)", carbs: 35 }, { label: "2 cups (280g)", carbs: 70 }] },
+  { name: "Potato (baked)", carbs100g: 21, servings: [{ label: "Small (150g)", carbs: 31 }, { label: "Medium (200g)", carbs: 42 }, { label: "Large (300g)", carbs: 63 }] },
+  { name: "Mashed Potatoes", carbs100g: 18, servings: [{ label: "½ cup (120g)", carbs: 22 }, { label: "1 cup (240g)", carbs: 43 }, { label: "1½ cups (360g)", carbs: 65 }] },
+  { name: "French Fries", carbs100g: 35, servings: [{ label: "Small (100g)", carbs: 35 }, { label: "Medium (150g)", carbs: 52 }, { label: "Large (250g)", carbs: 87 }] },
+  { name: "Oatmeal (cooked)", carbs100g: 12, servings: [{ label: "½ cup (120g)", carbs: 14 }, { label: "1 cup (240g)", carbs: 28 }, { label: "1½ cups (360g)", carbs: 43 }] },
+  { name: "Cornflakes Cereal", carbs100g: 84, servings: [{ label: "½ cup (15g)", carbs: 13 }, { label: "1 cup (30g)", carbs: 25 }, { label: "1½ cups (45g)", carbs: 38 }] },
+  { name: "Banana", carbs100g: 23, servings: [{ label: "Small (90g)", carbs: 21 }, { label: "Medium (120g)", carbs: 28 }, { label: "Large (150g)", carbs: 34 }] },
+  { name: "Apple", carbs100g: 14, servings: [{ label: "Small (140g)", carbs: 20 }, { label: "Medium (180g)", carbs: 25 }, { label: "Large (220g)", carbs: 31 }] },
+  { name: "Orange", carbs100g: 12, servings: [{ label: "Small (130g)", carbs: 15 }, { label: "Medium (180g)", carbs: 21 }, { label: "Large (230g)", carbs: 27 }] },
+  { name: "Grapes", carbs100g: 18, servings: [{ label: "½ cup (80g)", carbs: 14 }, { label: "1 cup (160g)", carbs: 29 }, { label: "1½ cups (240g)", carbs: 43 }] },
+  { name: "Mango", carbs100g: 15, servings: [{ label: "½ cup diced (80g)", carbs: 12 }, { label: "1 cup diced (160g)", carbs: 24 }, { label: "Whole (300g)", carbs: 45 }] },
+  { name: "Watermelon", carbs100g: 8, servings: [{ label: "1 slice (280g)", carbs: 22 }, { label: "2 slices (560g)", carbs: 45 }, { label: "3 cups diced (450g)", carbs: 36 }] },
+  { name: "Orange Juice", carbs100g: 10, servings: [{ label: "½ cup (120ml)", carbs: 13 }, { label: "1 cup (240ml)", carbs: 26 }, { label: "1½ cups (360ml)", carbs: 38 }] },
+  { name: "Apple Juice", carbs100g: 12, servings: [{ label: "½ cup (120ml)", carbs: 14 }, { label: "1 cup (240ml)", carbs: 29 }, { label: "1½ cups (360ml)", carbs: 43 }] },
+  { name: "Coca-Cola / Soda", carbs100g: 11, servings: [{ label: "Can (355ml)", carbs: 39 }, { label: "Small bottle (500ml)", carbs: 55 }, { label: "Large bottle (600ml)", carbs: 66 }] },
+  { name: "Milk (whole)", carbs100g: 5, servings: [{ label: "½ cup (120ml)", carbs: 6 }, { label: "1 cup (240ml)", carbs: 12 }, { label: "2 cups (480ml)", carbs: 24 }] },
+  { name: "Yogurt (plain)", carbs100g: 5, servings: [{ label: "½ cup (120g)", carbs: 6 }, { label: "1 cup (245g)", carbs: 12 }, { label: "Container (170g)", carbs: 8 }] },
+  { name: "Corn (cooked)", carbs100g: 19, servings: [{ label: "½ cup (80g)", carbs: 15 }, { label: "1 cup (160g)", carbs: 30 }, { label: "1 ear (90g)", carbs: 17 }] },
+  { name: "Peas (cooked)", carbs100g: 14, servings: [{ label: "½ cup (80g)", carbs: 11 }, { label: "1 cup (160g)", carbs: 23 }, { label: "1½ cups (240g)", carbs: 34 }] },
+  { name: "Black Beans (cooked)", carbs100g: 23, servings: [{ label: "½ cup (85g)", carbs: 20 }, { label: "1 cup (170g)", carbs: 41 }, { label: "1½ cups (255g)", carbs: 61 }] },
+  { name: "Lentils (cooked)", carbs100g: 20, servings: [{ label: "½ cup (100g)", carbs: 20 }, { label: "1 cup (200g)", carbs: 40 }, { label: "1½ cups (300g)", carbs: 60 }] },
+  { name: "Tortilla (flour, 8in)", carbs100g: 52, servings: [{ label: "1 tortilla (45g)", carbs: 23 }, { label: "2 tortillas (90g)", carbs: 47 }, { label: "3 tortillas (135g)", carbs: 70 }] },
+  { name: "Tortilla (corn, 6in)", carbs100g: 46, servings: [{ label: "1 tortilla (26g)", carbs: 12 }, { label: "2 tortillas (52g)", carbs: 24 }, { label: "3 tortillas (78g)", carbs: 36 }] },
+  { name: "Pizza (cheese slice)", carbs100g: 27, servings: [{ label: "1 slice (100g)", carbs: 27 }, { label: "2 slices (200g)", carbs: 54 }, { label: "3 slices (300g)", carbs: 81 }] },
+  { name: "Hamburger Bun", carbs100g: 49, servings: [{ label: "1 regular bun (43g)", carbs: 21 }, { label: "1 large bun (55g)", carbs: 27 }, { label: "2 buns (86g)", carbs: 42 }] },
+  { name: "Pancakes", carbs100g: 37, servings: [{ label: "1 small (45g)", carbs: 17 }, { label: "2 medium (110g)", carbs: 41 }, { label: "3 medium (165g)", carbs: 61 }] },
+  { name: "Waffles", carbs100g: 33, servings: [{ label: "1 waffle (75g)", carbs: 25 }, { label: "2 waffles (150g)", carbs: 49 }, { label: "3 waffles (225g)", carbs: 74 }] },
+  { name: "Ice Cream (vanilla)", carbs100g: 24, servings: [{ label: "½ cup (65g)", carbs: 16 }, { label: "1 cup (130g)", carbs: 31 }, { label: "1½ cups (195g)", carbs: 47 }] },
+  { name: "Chocolate", carbs100g: 60, servings: [{ label: "2 squares (20g)", carbs: 12 }, { label: "½ bar (40g)", carbs: 24 }, { label: "Full bar (80g)", carbs: 48 }] },
+  { name: "Crackers (saltine)", carbs100g: 72, servings: [{ label: "5 crackers (15g)", carbs: 11 }, { label: "10 crackers (30g)", carbs: 22 }, { label: "15 crackers (45g)", carbs: 32 }] },
+  { name: "Popcorn", carbs100g: 57, servings: [{ label: "1 cup (8g)", carbs: 5 }, { label: "3 cups (24g)", carbs: 14 }, { label: "5 cups (40g)", carbs: 23 }] },
+  { name: "Quinoa (cooked)", carbs100g: 22, servings: [{ label: "½ cup (90g)", carbs: 20 }, { label: "1 cup (185g)", carbs: 40 }, { label: "1½ cups (275g)", carbs: 60 }] },
+  { name: "Sweet Potato (baked)", carbs100g: 20, servings: [{ label: "Small (130g)", carbs: 26 }, { label: "Medium (200g)", carbs: 40 }, { label: "Large (280g)", carbs: 56 }] },
+  { name: "Noodles / Ramen (cooked)", carbs100g: 26, servings: [{ label: "½ cup (70g)", carbs: 18 }, { label: "1 cup (140g)", carbs: 36 }, { label: "Full pack (200g)", carbs: 52 }] },
+  { name: "Pita Bread (6in)", carbs100g: 56, servings: [{ label: "½ pita (30g)", carbs: 17 }, { label: "1 pita (60g)", carbs: 34 }, { label: "2 pitas (120g)", carbs: 67 }] },
+];
+
+// ─── State ───
+let selectedFood = null;
+let selectedPortionCarbs = null;
+let selectedPortionBtn = null;
+
+// ─── Persist settings ───
+function saveSettings() {
+  const s = { icr: document.getElementById('icr').value, isf: document.getElementById('isf').value, target: document.getElementById('target').value };
+  localStorage.setItem('insulinSettings', JSON.stringify(s));
+  const badge = document.getElementById('saved-badge');
+  badge.classList.add('show');
+  setTimeout(() => badge.classList.remove('show'), 1800);
+}
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('insulinSettings') || '{}');
+    if (s.icr) document.getElementById('icr').value = s.icr;
+    if (s.isf) document.getElementById('isf').value = s.isf;
+    if (s.target) document.getElementById('target').value = s.target;
+  } catch(e) {}
+}
+
+// ─── Settings toggle ───
+document.getElementById('settings-toggle').addEventListener('click', function() {
+  this.classList.toggle('open');
+  document.getElementById('settings-body').classList.toggle('open');
+});
+
+['icr','isf','target'].forEach(id => {
+  document.getElementById(id).addEventListener('change', saveSettings);
+});
+
+// ─── Food search ───
+const searchInput = document.getElementById('food-search');
+const resultsDiv = document.getElementById('food-results');
+
+searchInput.addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  if (!q) { resultsDiv.style.display = 'none'; return; }
+  const matches = FOODS.filter(f => f.name.toLowerCase().includes(q)).slice(0, 8);
+  if (!matches.length) { resultsDiv.style.display = 'none'; return; }
+  resultsDiv.innerHTML = matches.map((f, i) =>
+    `<div class="food-item" data-index="${FOODS.indexOf(f)}">
+      <div class="food-item-name">${f.name}</div>
+      <div class="food-item-carb">${f.carbs100g}g carbs per 100g</div>
+    </div>`).join('');
+  resultsDiv.style.display = 'block';
+});
+
+resultsDiv.addEventListener('click', function(e) {
+  const item = e.target.closest('.food-item');
+  if (!item) return;
+  const food = FOODS[parseInt(item.dataset.index)];
+  selectFood(food);
+});
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.search-wrap')) resultsDiv.style.display = 'none';
+});
+
+function selectFood(food) {
+  selectedFood = food;
+  selectedPortionCarbs = null;
+  selectedPortionBtn = null;
+  resultsDiv.style.display = 'none';
+  searchInput.value = food.name;
+  document.getElementById('sfood-name').textContent = food.name;
+  document.getElementById('sfood-carb').textContent = `${food.carbs100g}g carbs per 100g`;
+  document.getElementById('selected-food-display').classList.add('show');
+  renderPortions(food);
+  document.getElementById('portion-field').style.display = 'block';
+  document.getElementById('manual-carb-field').style.display = 'none';
+  document.getElementById('manual-carbs').value = '';
+}
+
+function renderPortions(food) {
+  const container = document.getElementById('portion-buttons');
+  container.innerHTML = food.servings.map((s, i) =>
+    `<button class="portion-btn" data-carbs="${s.carbs}" data-i="${i}">${s.label}<br><strong>${s.carbs}g carbs</strong></button>`
+  ).join('');
+  document.getElementById('total-carb-hint').textContent = '';
+  container.querySelectorAll('.portion-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      container.querySelectorAll('.portion-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      selectedPortionCarbs = parseFloat(this.dataset.carbs);
+      document.getElementById('total-carb-hint').textContent = `Total carbs: ${selectedPortionCarbs}g`;
+    });
+  });
+}
+
+document.getElementById('clear-food').addEventListener('click', function() {
+  selectedFood = null;
+  selectedPortionCarbs = null;
+  searchInput.value = '';
+  document.getElementById('selected-food-display').classList.remove('show');
+  document.getElementById('portion-field').style.display = 'none';
+  document.getElementById('manual-carb-field').style.display = 'block';
+  document.getElementById('manual-carbs').value = '';
+  document.getElementById('total-carb-hint').textContent = '';
+});
+
+// ─── Calculate ───
+document.getElementById('calc-btn').addEventListener('click', function() {
+  const icr = parseFloat(document.getElementById('icr').value);
+  const isf = parseFloat(document.getElementById('isf').value);
+  const target = parseFloat(document.getElementById('target').value);
+  const currentSugar = parseFloat(document.getElementById('current-sugar').value);
+  const manualCarbs = parseFloat(document.getElementById('manual-carbs').value);
+
+  const carbs = selectedPortionCarbs ?? (isNaN(manualCarbs) ? null : manualCarbs);
+
+  if (!icr || !isf || !target) {
+    openSettings();
+    alert('Please fill in Patient Settings first (Insulin-to-Carb Ratio, Correction Factor, and Target Blood Sugar).');
+    return;
+  }
+  if (carbs === null) { alert('Please select a food and portion, or enter carbs manually.'); return; }
+  if (isNaN(currentSugar)) { alert('Please enter the current blood sugar reading.'); return; }
+
+  const foodDose = carbs / icr;
+  const correctionDose = (currentSugar - target) / isf;
+  const total = Math.max(0, foodDose + correctionDose);
+
+  document.getElementById('res-food').textContent = round(foodDose) + ' u';
+  document.getElementById('res-correction').textContent = (correctionDose >= 0 ? '+' : '') + round(correctionDose) + ' u';
+  document.getElementById('res-total').textContent = round(total);
+
+  document.getElementById('result').classList.add('show');
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const warning = document.getElementById('low-warning');
+  if (currentSugar <= target) {
+    warning.classList.add('show');
+  } else {
+    warning.classList.remove('show');
+  }
+});
+
+function round(n) {
+  return Math.round(n * 10) / 10;
+}
+
+function openSettings() {
+  document.getElementById('settings-toggle').classList.add('open');
+  document.getElementById('settings-body').classList.add('open');
+}
+
+// ─── Init ───
+loadSettings();
+if (!document.getElementById('icr').value) openSettings();
+</script>
+</body>
+</html>
