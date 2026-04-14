@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Insulin Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root {
+  --day: #3b82f6;
+  --night: #6366f1;
+  --bg: #f8f7f4;
+  --surface: #ffffff;
+  --text: #1c1917;
+  --muted: #78716c;
+  --border: #e7e5e4;
+  --radius: 20px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --accent: #3b82f6;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── SHELL ── */
+.app {
+  width: 100%;
+  max-width: 420px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── SCREENS ── */
+.screen {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  padding: 28px 20px 40px;
+  animation: fadeIn 0.3s ease;
+}
+.screen.active { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.back-btn {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.back-btn:hover { background: var(--border); }
+
+.settings-btn {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.step-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── PROGRESS DOTS ── */
+.dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s;
+}
+.dot.active {
+  width: 24px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+.dot.done { background: var(--accent); opacity: 0.4; }
+
+/* ── HEADINGS ── */
+h1.screen-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+p.screen-sub {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* ── TIME CARDS ── */
+.time-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.time-card {
+  border-radius: var(--radius);
+  border: 3px solid var(--border);
+  background: var(--surface);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+.time-card:active { transform: scale(0.97); }
+.time-card .tc-emoji { font-size: 3rem; margin-bottom: 10px; display: block; }
+.time-card .tc-label { font-size: 1.1rem; font-weight: 800; }
+.time-card .tc-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+.time-card.day:hover, .time-card.day:focus {
+  border-color: var(--day);
+  background: #eff6ff;
+}
+.time-card.night:hover, .time-card.night:focus {
+  border-color: var(--night);
+  background: #eef2ff;
+}
+
+/* ── BS INPUT SCREEN ── */
+.bs-input-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.bs-input-wrap input {
+  width: 100%;
+  padding: 20px 60px 20px 20px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  outline: none;
+  color: var(--text);
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+.bs-input-wrap input:focus { border-color: var(--accent); }
+.bs-unit {
+  position: absolute;
+  right: 18px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: white;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.4);
+  margin-bottom: 12px;
+}
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary.night-accent {
+  background: var(--night);
+  box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+}
+
+.btn-skip {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── FOOD GRID ── */
+.food-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.food-card {
+  border-radius: var(--radius);
+  border: 3px solid var(--border);
+  background: var(--surface);
+  padding: 18px 12px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+.food-card:active { transform: scale(0.97); }
+.food-card .fc-emoji {
+  font-size: 2.8rem;
+  margin-bottom: 10px;
+  display: block;
+  line-height: 1;
+}
+.food-card .fc-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.food-card:hover {
+  border-color: var(--accent);
+  background: #eff6ff;
+}
+.food-card.night-mode:hover {
+  border-color: var(--night);
+  background: #eef2ff;
+}
+
+/* ── FOOD DETAIL SCREENS ── */
+.option-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.option-card {
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 20px 12px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 800;
+  transition: all 0.2s;
+}
+.option-card.selected {
+  border-color: var(--accent);
+  background: #eff6ff;
+}
+.option-card.selected.night-mode {
+  border-color: var(--night);
+  background: #eef2ff;
+}
+
+.count-wrap {
+  margin-bottom: 24px;
+}
+.count-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  display: block;
+}
+.count-input {
+  width: 100%;
+  padding: 18px 20px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  outline: none;
+  color: var(--text);
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  text-align: center;
+}
+.count-input:focus { border-color: var(--accent); }
+
+/* ── RESULT SCREEN ── */
+.result-hero {
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  text-align: center;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #3b82f6, #ef4444);
+  box-shadow: 0 8px 32px rgba(59,130,246,0.35);
+  color: white;
+}
+.result-hero.night-mode {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 8px 32px rgba(99,102,241,0.35);
+}
+
+.result-food-emoji { font-size: 2.5rem; margin-bottom: 8px; display: block; }
+.result-label { font-size: 0.85rem; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.result-dose { font-size: 5rem; font-weight: 900; line-height: 1; }
+.result-unit-label { font-size: 1.1rem; font-weight: 700; opacity: 0.85; margin-top: 4px; }
+
+.result-breakdown {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+.breakdown-row:last-child { border-bottom: none; padding-bottom: 0; }
+.breakdown-row .br-label { color: var(--muted); font-weight: 700; }
+.breakdown-row .br-val { font-weight: 900; font-size: 1.05rem; }
+.br-math {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 700;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin: 4px 0 6px;
+  line-height: 1.6;
+}
+
+.btn-restart {
+  width: 100%;
+  padding: 18px;
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* ── SETTINGS MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: 28px 28px 0 0;
+  padding: 28px 24px 48px;
+  width: 100%;
+  max-width: 420px;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.modal-title {
+  font-size: 1.4rem;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+.modal-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.setting-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+.setting-field input {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  outline: none;
+  color: var(--text);
+  -webkit-appearance: none;
+}
+.setting-field input:focus { border-color: var(--accent); }
+
+.modal-save {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--text);
+  color: white;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* ── HOME SCREEN ── */
+.home-header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-top: 20px;
+}
+.home-header .app-icon {
+  font-size: 3.5rem;
+  display: block;
+  margin-bottom: 12px;
+}
+.home-header h1 {
+  font-size: 2rem;
+  font-weight: 900;
+}
+.home-header p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-top: 6px;
+}
+
+.home-start {
+  margin-top: auto;
+}
+
+/* ── WARNING BOX ── */
+.warning-box {
+  background: #fef3c7;
+  border: 2px solid #3b82f6;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 16px;
+  display: none;
+  line-height: 1.5;
+}
+.warning-box.show { display: block; }
+
+.disclaimer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 16px;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══════════════ HOME ══════════════ -->
+  <div class="screen active" id="screen-home">
+    <div class="topbar">
+      <div style="width:40px"></div>
+      <span class="step-label">Ready</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="home-header">
+      <span class="app-icon">💉</span>
+      <h1>Insulin Calc</h1>
+      <p>Simple, safe dosing every time</p>
+    </div>
+    <div style="flex:1"></div>
+    <div class="home-start">
+      <button class="btn-primary" onclick="go('screen-time')">Start →</button>
+      <p class="disclaimer">Always confirm doses with your care team.<br>Not a substitute for medical advice.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════ STEP 1: TIME OF DAY ══════════════ -->
+  <div class="screen" id="screen-time">
+    <div class="topbar">
+      <button class="back-btn" onclick="go('screen-home')">←</button>
+      <span class="step-label">Step 1 of 4</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="dots">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <h1 class="screen-title">What time<br>is it?</h1>
+    <p class="screen-sub">This affects the insulin calculation.</p>
+    <div class="time-cards">
+      <div class="time-card day" onclick="selectTime('day')">
+        <span class="tc-emoji">☀️</span>
+        <div class="tc-label">Daytime</div>
+        <div class="tc-sub">Morning or afternoon</div>
+      </div>
+      <div class="time-card night" onclick="selectTime('night')">
+        <span class="tc-emoji">🌙</span>
+        <div class="tc-label">Nighttime</div>
+        <div class="tc-sub">Evening or night</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ STEP 2: BLOOD SUGAR ══════════════ -->
+  <div class="screen" id="screen-bs">
+    <div class="topbar">
+      <button class="back-btn" onclick="go('screen-time')">←</button>
+      <span class="step-label">Step 2 of 4</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <h1 class="screen-title">Current blood<br>sugar?</h1>
+    <div class="bs-input-wrap">
+      <input type="number" id="bs-input" inputmode="numeric" placeholder="" min="30" max="600"/>
+      <span class="bs-unit">mg/dL</span>
+    </div>
+    <button class="btn-primary" id="bs-next-btn" onclick="submitBS()">Next →</button>
+    <button class="btn-skip" onclick="skipBS()">Skip — use food dose only</button>
+  </div>
+
+  <!-- ══════════════ STEP 3: FOOD SELECTION ══════════════ -->
+  <div class="screen" id="screen-food">
+    <div class="topbar">
+      <button class="back-btn" onclick="go('screen-bs')">←</button>
+      <span class="step-label">Step 3 of 4</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+    </div>
+    <h1 class="screen-title">What did<br>he eat?</h1>
+    <p class="screen-sub">Tap the food to continue.</p>
+    <div class="food-grid">
+      <div class="food-card" id="fc-pancakes" onclick="selectFood('pancakes')">
+        <span class="fc-emoji">🥞</span>
+        <div class="fc-name">Pancakes</div>
+      </div>
+      <div class="food-card" id="fc-cheerios" onclick="selectFood('cheerios')">
+        <span class="fc-emoji">🥣</span>
+        <div class="fc-name">Cheerios</div>
+      </div>
+      <div class="food-card" id="fc-frenchtoast" onclick="selectFood('frenchtoast')">
+        <span class="fc-emoji">🍞</span>
+        <div class="fc-name">French Toast</div>
+      </div>
+      <div class="food-card" id="fc-ramen" onclick="selectFood('ramen')">
+        <span class="fc-emoji">🍜</span>
+        <div class="fc-name">Ramen Noodles</div>
+      </div>
+      <div class="food-card" id="fc-fries" onclick="selectFood('fries')">
+        <span class="fc-emoji">🍟</span>
+        <div class="fc-name">French Fries</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ STEP 4: PANCAKES ══════════════ -->
+  <div class="screen" id="screen-pancakes">
+    <div class="topbar">
+      <button class="back-btn" onclick="go('screen-food')">←</button>
+      <span class="step-label">Step 4 of 4</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+    <h1 class="screen-title">🥞 Pancakes</h1>
+    <p class="screen-sub">Select size, then enter how many.</p>
+    <div class="option-cards">
+      <div class="option-card" id="pancake-small" onclick="selectPancakeSize('small')">Small</div>
+      <div class="option-card" id="pancake-large" onclick="selectPancakeSize('large')">Large</div>
+    </div>
+    <div class="count-wrap">
+      <span class="count-label">How many pancakes?</span>
+      <input class="count-input" type="number" id="pancake-count" inputmode="numeric" placeholder="0" min="1"/>
+    </div>
+    <button class="btn-primary" onclick="calculate('pancakes')">Calculate →</button>
+  </div>
+
+  <!-- ══════════════ STEP 4: CHEERIOS ══════════════ -->
+  <div class="screen" id="screen-cheerios">
+    <div class="topbar">
+      <button class="back-btn" onclick="go('screen-food')">←</button>
+      <span class="step-label">Step 4 of 4</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+    <h1 class="screen-title">🥣 Cheerios</h1>
+    <p class="screen-sub">Enter the number of cups.</p>
+    <div class="count-wrap">
+      <span class="count-label">How many cups?</span>
+      <input class="count-input" type="number" id="cheerios-count" inputmode="decimal" placeholder="0" min="0.25" step="0.25"/>
+    </div>
+    <button class="btn-primary" onclick="calculate('cheerios')">Calculate →</button>
+  </div>
+
+  <!-- ══════════════ STEP 4: FRENCH TOAST ══════════════ -->
+  <div class="screen" id="screen-frenchtoast">
+    <div class="topbar">
+      <button class="back-btn" onclick="go('screen-food')">←</button>
+      <span class="step-label">Step 4 of 4</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+    <h1 class="screen-title">🍞 French Toast</h1>
+    <p class="screen-sub">Enter the number of slices.</p>
+    <div class="count-wrap">
+      <span class="count-label">How many slices?</span>
+      <input class="count-input" type="number" id="frenchtoast-count" inputmode="numeric" placeholder="0" min="1"/>
+    </div>
+    <button class="btn-primary" onclick="calculate('frenchtoast')">Calculate →</button>
+  </div>
+
+  <!-- ══════════════ STEP 4: RAMEN ══════════════ -->
+  <div class="screen" id="screen-ramen">
+    <div class="topbar">
+      <button class="back-btn" onclick="go('screen-food')">←</button>
+      <span class="step-label">Step 4 of 4</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+    <h1 class="screen-title">🍜 Ramen Noodles</h1>
+    <p class="screen-sub">Enter the number of packs.</p>
+    <div class="count-wrap">
+      <span class="count-label">How many packs?</span>
+      <input class="count-input" type="number" id="ramen-count" inputmode="numeric" placeholder="0" min="1"/>
+    </div>
+    <button class="btn-primary" onclick="calculate('ramen')">Calculate →</button>
+  </div>
+
+  <!-- ══════════════ STEP 4: FRIES ══════════════ -->
+  <div class="screen" id="screen-fries">
+    <div class="topbar">
+      <button class="back-btn" onclick="go('screen-food')">←</button>
+      <span class="step-label">Step 4 of 4</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+    <h1 class="screen-title">🍟 French Fries</h1>
+    <p class="screen-sub">Enter the weight of fries in grams.</p>
+    <div class="count-wrap">
+      <span class="count-label">How many grams?</span>
+      <input class="count-input" type="number" id="fries-count" inputmode="numeric" placeholder="0" min="1"/>
+    </div>
+    <button class="btn-primary" onclick="calculate('fries')">Calculate →</button>
+  </div>
+
+  <!-- ══════════════ RESULT ══════════════ -->
+  <div class="screen" id="screen-result">
+    <div class="topbar">
+      <div style="width:40px"></div>
+      <span class="step-label">Done ✓</span>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+    <div class="warning-box" id="result-warning"></div>
+    <div class="result-hero" id="result-hero">
+      <span class="result-food-emoji" id="result-emoji"></span>
+      <div class="result-label">Total Insulin to Inject</div>
+      <div class="result-dose" id="result-dose">--</div>
+      <div class="result-unit-label">units</div>
+    </div>
+    <div class="result-breakdown">
+      <div class="breakdown-row">
+        <span class="br-label">🍽️ Food dose</span>
+        <span class="br-val" id="bd-food">--</span>
+      </div>
+      <div class="br-math" id="bd-food-math"></div>
+      <div class="breakdown-row" style="margin-top:4px;">
+        <span class="br-label">🩸 Correction dose</span>
+        <span class="br-val" id="bd-correction">--</span>
+      </div>
+      <div class="br-math" id="bd-correction-math"></div>
+      <div class="breakdown-row" style="border-top: 2px solid var(--border); margin-top:8px; padding-top:14px;">
+        <span class="br-label">⏰ Time of day</span>
+        <span class="br-val" id="bd-time">--</span>
+      </div>
+    </div>
+    <button class="btn-restart" onclick="restart()">← Start Over</button>
+    <p class="disclaimer" style="margin-top:16px">Always confirm doses with your care team.</p>
+  </div>
+
+</div><!-- end .app -->
+
+<!-- ══════════════ SETTINGS MODAL ══════════════ -->
+<div class="modal-overlay" id="settings-overlay" onclick="closeSettingsOutside(event)">
+  <div class="modal">
+    <div class="modal-title">⚙️ Settings</div>
+    <div class="modal-sub">These are set once and saved. You won't be asked for them each time.</div>
+    <div class="settings-grid">
+      <div class="setting-field">
+        <label>Daytime Target BS</label>
+        <input type="number" id="s-day-target" inputmode="numeric" placeholder="150"/>
+      </div>
+      <div class="setting-field">
+        <label>Nighttime Target BS</label>
+        <input type="number" id="s-night-target" inputmode="numeric" placeholder="50"/>
+      </div>
+      <div class="setting-field">
+        <label>Daytime ICR</label>
+        <input type="number" id="s-day-icr" inputmode="numeric" placeholder="12"/>
+      </div>
+      <div class="setting-field">
+        <label>Nighttime ICR</label>
+        <input type="number" id="s-night-icr" inputmode="numeric" placeholder="10"/>
+      </div>
+    </div>
+    <button class="modal-save" onclick="saveSettings()">Save Settings</button>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+const state = {
+  timeOfDay: null,       // 'day' | 'night'
+  bs: null,              // number | null
+  correctionDose: 0,
+  food: null,
+  pancakeSize: null,
+};
+
+// ── SETTINGS ──
+const DEFAULTS = { dayTarget: 150, nightTarget: 50, dayICR: 12, nightICR: 10 };
+let settings = { ...DEFAULTS };
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('insulinSettings2') || '{}');
+    settings.dayTarget   = s.dayTarget   ?? DEFAULTS.dayTarget;
+    settings.nightTarget = s.nightTarget ?? DEFAULTS.nightTarget;
+    settings.dayICR      = s.dayICR      ?? DEFAULTS.dayICR;
+    settings.nightICR    = s.nightICR    ?? DEFAULTS.nightICR;
+  } catch(e) {}
+  document.getElementById('s-day-target').value   = settings.dayTarget;
+  document.getElementById('s-night-target').value = settings.nightTarget;
+  document.getElementById('s-day-icr').value       = settings.dayICR;
+  document.getElementById('s-night-icr').value     = settings.nightICR;
+}
+
+function saveSettings() {
+  settings.dayTarget   = parseFloat(document.getElementById('s-day-target').value)   || DEFAULTS.dayTarget;
+  settings.nightTarget = parseFloat(document.getElementById('s-night-target').value) || DEFAULTS.nightTarget;
+  settings.dayICR      = parseFloat(document.getElementById('s-day-icr').value)       || DEFAULTS.dayICR;
+  settings.nightICR    = parseFloat(document.getElementById('s-night-icr').value)     || DEFAULTS.nightICR;
+  localStorage.setItem('insulinSettings2', JSON.stringify(settings));
+  closeSettings();
+}
+
+function openSettings() {
+  document.getElementById('settings-overlay').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+function closeSettingsOutside(e) {
+  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+}
+
+// ── NAVIGATION ──
+function go(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  window.scrollTo(0,0);
+  applyNightMode(screenId);
+}
+
+function applyNightMode(screenId) {
+  const isNight = state.timeOfDay === 'night';
+  document.querySelectorAll('.btn-primary').forEach(b => {
+    b.classList.toggle('night-accent', isNight);
+  });
+  document.querySelectorAll('.food-card').forEach(c => {
+    c.classList.toggle('night-mode', isNight);
+  });
+  document.querySelectorAll('.option-card.selected').forEach(c => {
+    c.classList.toggle('night-mode', isNight);
+  });
+  if (isNight) {
+    document.documentElement.style.setProperty('--accent', '#6366f1');
+  } else {
+    document.documentElement.style.setProperty('--accent', '#3b82f6');
+  }
+}
+
+// ── STEP 1: TIME ──
+function selectTime(t) {
+  state.timeOfDay = t;
+  go('screen-bs');
+}
+
+// ── STEP 2: BLOOD SUGAR ──
+function submitBS() {
+  const val = parseFloat(document.getElementById('bs-input').value);
+  if (isNaN(val) || val < 30) {
+    alert('Please enter a valid blood sugar reading (at least 30 mg/dL), or tap Skip.');
+    return;
+  }
+  state.bs = val;
+  const target = state.timeOfDay === 'day' ? settings.dayTarget : settings.nightTarget;
+  state.correctionDose = val <= target ? 0 : (val - target) / 50;
+  go('screen-food');
+}
+
+function skipBS() {
+  state.bs = null;
+  state.correctionDose = 0;
+  go('screen-food');
+}
+
+// ── STEP 3: FOOD ──
+function selectFood(food) {
+  state.food = food;
+  state.pancakeSize = null;
+  // reset inputs
+  ['pancake-count','cheerios-count','frenchtoast-count','ramen-count','fries-count'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('pancake-small').classList.remove('selected');
+  document.getElementById('pancake-large').classList.remove('selected');
+  go('screen-' + food);
+}
+
+// ── STEP 4: PANCAKE SIZE ──
+function selectPancakeSize(size) {
+  state.pancakeSize = size;
+  document.getElementById('pancake-small').classList.toggle('selected', size === 'small');
+  document.getElementById('pancake-large').classList.toggle('selected', size === 'large');
+  applyNightMode('screen-pancakes');
+}
+
+// ── CALCULATE ──
+function r(n) { return Math.round(n * 10) / 10; }
+
+function calculate(food) {
+  const icr = state.timeOfDay === 'day' ? settings.dayICR : settings.nightICR;
+  let carbs = 0;
+  let servingLabel = '';
+  let emoji = '';
+
+  if (food === 'pancakes') {
+    if (!state.pancakeSize) { alert('Please select Small or Large.'); return; }
+    const count = parseFloat(document.getElementById('pancake-count').value);
+    if (!count || count < 1) { alert('Please enter the number of pancakes.'); return; }
+    const carbPerPancake = state.pancakeSize === 'large' ? 25 : 10;
+    carbs = count * carbPerPancake;
+    servingLabel = `${count} ${state.pancakeSize} pancake${count !== 1 ? 's' : ''}`;
+    emoji = '🥞';
+
+  } else if (food === 'cheerios') {
+    const cups = parseFloat(document.getElementById('cheerios-count').value);
+    if (!cups || cups <= 0) { alert('Please enter the number of cups.'); return; }
+    carbs = cups * 32;
+    servingLabel = `${cups} cup${cups !== 1 ? 's' : ''} of Cheerios`;
+    emoji = '🥣';
+
+  } else if (food === 'frenchtoast') {
+    const slices = parseFloat(document.getElementById('frenchtoast-count').value);
+    if (!slices || slices < 1) { alert('Please enter the number of slices.'); return; }
+    carbs = slices * 13;
+    servingLabel = `${slices} slice${slices !== 1 ? 's' : ''} of French Toast`;
+    emoji = '🍞';
+
+  } else if (food === 'ramen') {
+    const packs = parseFloat(document.getElementById('ramen-count').value);
+    if (!packs || packs < 1) { alert('Please enter the number of packs.'); return; }
+    carbs = packs * 54;
+    servingLabel = `${packs} pack${packs !== 1 ? 's' : ''} of Ramen`;
+    emoji = '🍜';
+
+  } else if (food === 'fries') {
+    const grams = parseFloat(document.getElementById('fries-count').value);
+    if (!grams || grams < 1) { alert('Please enter the weight in grams.'); return; }
+    carbs = grams * 0.35;
+    servingLabel = `${grams}g of French Fries`;
+    emoji = '🍟';
+  }
+
+  const foodDose = carbs / icr;
+  const correctionDose = state.correctionDose;
+  const total = Math.max(0, foodDose + correctionDose);
+
+  // Math explanations
+  const target = state.timeOfDay === 'day' ? settings.dayTarget : settings.nightTarget;
+  document.getElementById('bd-food-math').textContent = `${r(carbs)} carbs ÷ ${icr} (ICR) = ${r(foodDose)} u`;
+  if (state.bs === null) {
+    document.getElementById('bd-correction-math').textContent = 'Blood sugar skipped → 0 u';
+  } else if (state.bs <= target) {
+    document.getElementById('bd-correction-math').textContent = `BS ${state.bs} ≤ target ${target} → 0 u`;
+  } else {
+    document.getElementById('bd-correction-math').textContent = `(${state.bs} − ${target}) ÷ 50 = ${r(correctionDose)} u`;
+  }
+
+  // Render result
+  const isNight = state.timeOfDay === 'night';
+  document.getElementById('result-hero').classList.toggle('night-mode', isNight);
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-dose').textContent = r(total);
+  document.getElementById('bd-food').textContent = r(foodDose) + ' u';
+  document.getElementById('bd-correction').textContent = (correctionDose >= 0 ? '+' : '') + r(correctionDose) + ' u';
+  document.getElementById('bd-time').textContent = state.timeOfDay === 'day' ? '☀️ Daytime' : '🌙 Nighttime';
+
+  // Warning if BS was low
+  const warning = document.getElementById('result-warning');
+  if (state.bs !== null) {
+    const target = state.timeOfDay === 'day' ? settings.dayTarget : settings.nightTarget;
+    if (state.bs <= target) {
+      warning.textContent = `⚠️ Blood sugar (${state.bs}) was at or below target (${target}). Correction dose is 0. Only food dose applied.`;
+      warning.classList.add('show');
+    } else {
+      warning.classList.remove('show');
+    }
+  } else {
+    warning.classList.remove('show');
+  }
+
+  go('screen-result');
+}
+
+// ── RESTART ──
+function restart() {
+  state.timeOfDay = null;
+  state.bs = null;
+  state.correctionDose = 0;
+  state.food = null;
+  state.pancakeSize = null;
+  document.getElementById('bs-input').value = '';
+  document.documentElement.style.setProperty('--accent', '#3b82f6');
+  document.querySelectorAll('.btn-primary').forEach(b => b.classList.remove('night-accent'));
+  go('screen-time');
+}
+
+// ── INIT ──
+loadSettings();
+</script>
+</body>
+</html>
